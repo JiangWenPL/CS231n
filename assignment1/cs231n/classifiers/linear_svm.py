@@ -34,15 +34,17 @@ def svm_loss_naive(W, X, y, reg):
         continue
       margin = scores[j] - correct_class_score + 1 # note delta = 1
       if margin > 0:
+        dW[:,j] += X[i]
+        dW[:,y[i]] -= X[i]
         loss += margin
 
   # Right now the loss is a sum over all training examples, but we want it
   # to be an average instead so we divide by num_train.
   loss /= num_train
-
+  dW /= num_train
   # Add regularization to the loss.
   loss += reg * np.sum(W * W)
-
+  dW += reg * 2 * W
   #############################################################################
   # TODO:                                                                     #
   # Compute the gradient of the loss function and store it dW.                #
@@ -70,7 +72,14 @@ def svm_loss_vectorized(W, X, y, reg):
   # Implement a vectorized version of the structured SVM loss, storing the    #
   # result in loss.                                                           #
   #############################################################################
-  pass
+  num_classes = W.shape[1]
+  num_train = X.shape[0]
+  score = X.dot(W)
+  loss_matrix = score - score[np.arange(num_train),y].reshape(-1,1) + 1 # note delta = 1
+  loss_matrix[np.arange(num_train),y] = 0
+  loss_matrix = np.maximum(0, loss_matrix)
+#   print(loss_matrix[loss_matrix>0].shape[0], num_train)
+  loss += np.mean(loss_matrix) / num_train + reg * np.sum(W*W)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -85,7 +94,13 @@ def svm_loss_vectorized(W, X, y, reg):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
-  pass
+  loss_matrix[loss_matrix>0] = 1 # indicator
+  loss_matrix[np.arange(num_train),y] = -1 #(N,c)
+  print(loss_matrix.shape)
+  print(X.shape)
+  dW = X.dot(loss_matrix)
+  dW /= num_train
+  dW += reg * 2 * W
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
