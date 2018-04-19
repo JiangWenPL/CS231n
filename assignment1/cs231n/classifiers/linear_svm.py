@@ -81,7 +81,7 @@ def svm_loss_vectorized(W, X, y, reg):
 #   print(loss_matrix[loss_matrix>0].shape[0], num_train)
   loss += np.mean(loss_matrix) / num_train + reg * np.sum(W*W)
   #############################################################################
-  #                             END OF YOUR CODE                              #
+  #                             END OF YOUR vCODE                              #
   #############################################################################
 
 
@@ -95,10 +95,9 @@ def svm_loss_vectorized(W, X, y, reg):
   # loss.                                                                     #
   #############################################################################
   loss_matrix[loss_matrix>0] = 1 # indicator
-  loss_matrix[np.arange(num_train),y] = -1 #(N,c)
-  print(loss_matrix.shape)
-  print(X.shape)
-  dW = X.dot(loss_matrix)
+  loss_matrix[np.arange(num_train),y] = -np.sum(loss_matrix, axis = 1) #(N,c)
+#   print(np.sum(loss_matrix, axis = 1).shape)
+  dW = X.T.dot(loss_matrix)
   dW /= num_train
   dW += reg * 2 * W
   #############################################################################
