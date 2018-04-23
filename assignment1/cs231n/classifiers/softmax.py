@@ -30,7 +30,22 @@ def softmax_loss_naive(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
+  num_classes = W.shape[1]
+  num_train = X.shape[0]
+  for i in xrange(num_train):
+    scores = X[i].dot(W)
+    scores -= np.max(scores)
+    sum_exp = np.sum(np.exp(scores))
+    loss += -scores[y[i]] + np.log(sum_exp)
+    for j in xrange(num_classes):
+      if j==y[i]:
+        dW[:,j] += -X[i] + X[i] * np.exp(scores[j])/sum_exp
+      else:
+        dW[:,j] += X[i] * np.exp(scores[j])/sum_exp
+  loss /= num_train
+  dW /= num_train
+  loss += reg * np.sum(W * W)
+  dW += reg * 2 * W
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
@@ -54,10 +69,26 @@ def softmax_loss_vectorized(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
+  num_classes = W.shape[1]
+  num_train = X.shape[0]
+  scores = X.dot(W)
+#   print(np.max(scores, axis=1).shape)
+  scores -= np.max(scores, axis=1).reshape(-1,1)
+  sum_exp = np.sum(np.exp(scores), axis=1)
+  loss += -np.sum(scores[range(num_train),y]) + np.sum(np.log(sum_exp))
+#   print(dW[:,0].shape, X[0].shape)
+  mask = np.zeros((num_train,num_classes))
+  mask[np.arange(num_train),y] = 1
+  dW -= X.T.dot(mask)
+  dW += (X/sum_exp.reshape(-1,1)).T.dot(np.exp(scores))
+  loss /= num_train
+  dW /= num_train
+  loss += reg * np.sum(W * W)
+  dW += reg * 2 * W
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
 
   return loss, dW
 
+       
