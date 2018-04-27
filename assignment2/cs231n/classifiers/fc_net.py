@@ -161,7 +161,6 @@ class FullyConnectedNet(object):
         self.num_layers = 1 + len(hidden_dims)
         self.dtype = dtype
         self.params = {}
-
         ############################################################################
         # TODO: Initialize the parameters of the network, storing all values in    #
         # the self.params dictionary. Store weights and biases for the first layer #
@@ -177,13 +176,18 @@ class FullyConnectedNet(object):
         for i in range(self.num_layers):
             if i == 0:
                 self.params['W' + str(i + 1)] = weight_scale * np.random.randn(input_dim, hidden_dims[i])
+                self.params['b' + str(i + 1)] = np.zeros(hidden_dims[i])
             elif i == self.num_layers - 1:
-                self.params['W' + str(i + 1)] = weight_scale * np.random.randn(hidden_dims[i], num_classes)
+                self.params['W' + str(i + 1)] = weight_scale * np.random.randn(hidden_dims[i - 1], num_classes)
+                self.params['b' + str(i + 1)] = np.zeros(num_classes)
             else:
-                self.params['W' + str(i + 1)] = weight_scale * np.random.randn(hidden_dims[i], hidden_dims[i+1])
-            self.params['b' + str(i + 1)] = np.zeros(hidden_dims[i])
-            self.params['gamma' + str(i + 1)] = np.ones(hidden_dims[i])
-            self.params['beta' + str(i + 1)] = np.zeros(hidden_dims[i])
+                self.params['W' + str(i + 1)] = weight_scale * np.random.randn(hidden_dims[i - 1], hidden_dims[i])
+                self.params['b' + str(i + 1)] = np.zeros(hidden_dims[i])
+            if self.use_batchnorm:
+                self.params['gamma' + str(i + 1)] = np.ones(hidden_dims[i])
+                self.params['beta' + str(i + 1)] = np.zeros(hidden_dims[i])
+#         for idx in self.params:
+#             print (idx, self.params[idx].shape)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -241,7 +245,13 @@ class FullyConnectedNet(object):
         # self.bn_params[1] to the forward pass for the second batch normalization #
         # layer, etc.                                                              #
         ############################################################################
-        for i in range(self.number_layers):
+        tmp_input = X
+        tmp_cache = {}
+        for i in range(self.num_layers - 1):
+            tmp_input, tmp_cache[i] = affine_relu_forward(tmp_input, self.params['W' + str(i + 1)], self.params['b' + str(i + 1)])
+#         print('self.num_layers', self.num_layers)
+        i = self.num_layers - 1
+        scores, tmp_cache[i] = affine_forward(tmp_input, self.params['W' + str(i + 1)], self.params['b' + str(i + 1)])
             
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -265,9 +275,21 @@ class FullyConnectedNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
-        pass
+        loss, dscores = softmax_loss(scores, y)
+        loss += self.reg * 0.5 * np.sum(self.params['W' + str(self.num_layers)] ** 2) 
+        dx, dw, db = affine_backward(dscores, tmp_cache[self.num_layers - 1])
+        grads['W' + str(self.num_layers)] = dw + self.reg * self.params['W' + str(self.num_layers)]
+        grads['b' + str(self.num_layers)] = db
+        dout = dx
+        for j in range(self.num_layers - 1):
+            i = self.num_layers - 1 - j - 1 # To keep consitency with forward process
+            loss += self.reg * 0.5 * np.sum(self.params['W' + str(i + 1)] ** 2)
+            dout, dw, db = affine_relu_backward(dout, tmp_cache[i])
+            grads['W' + str(i + 1)] = dw + self.reg * self.params['W' + str(i+1)]
+            grads['b' + str(i + 1)] = db
+#         for idx in grads:
+#             print(idx)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
-
         return loss, grads
