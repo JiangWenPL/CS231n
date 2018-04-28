@@ -186,7 +186,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # x_new is (N, D)
         out = gamma * x_new + beta
         # out is (N, D)
-        cache = (mu, sigma, eta, gamma, eps, x, x_new)
+        cache = (mu, sigma, eta, gamma, eps, x - mu, x_new)
         # At the first time, I mees up this function. Simply because I use
         # running_mean and running_var to normalize X, missleading by the doc
         # string
@@ -241,19 +241,19 @@ def batchnorm_backward(dout, cache):
     # TODO: Implement the backward pass for batch normalization. Store the    #
     # results in the dx, dgamma, and dbeta variables.                         #
     ###########################################################################
-    mu, sigma, eta, gamma, eps, x, x_new = cache
-    N, D = x.shape
+    mu, sigma, eta, gamma, eps, x_mu, x_new = cache
+    N, D = x_mu.shape
     dgamma = np.sum(x_new * dout, axis=0)
     dbeta = np.sum(dout, axis=0)
     dx_new = dout * gamma # Normal(x) = (x - mu) * eta
     dx_mu = dx_new * eta
-    deta = np.sum(dx_new * (x - mu), axis=0)
+    deta = np.sum(dx_new * x_mu, axis=0)
     dsigma_2 = -0.5 * deta * (sigma + eps)**-1.5 # sigma^2
-    dsigma = np.ones_like(x) * dsigma_2 / N # d(sum(x - mu)^2 / N)
+    dsigma = np.ones_like(x_mu) * dsigma_2 / N # d(sum(x - mu)^2 / N)
     
-    dx_mu += dsigma * 2 * (x - mu)
+    dx_mu += dsigma * 2 * x_mu
     dx = dx_mu
-    dx += -np.sum(dx_mu, axis=0) * np.ones_like(x) / N 
+    dx += -np.sum(dx_mu, axis=0) * np.ones_like(x_mu) / N 
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -283,7 +283,26 @@ def batchnorm_backward_alt(dout, cache):
     # should be able to compute gradients with respect to the inputs in a     #
     # single statement; our implementation fits on a single 80-character line.#
     ###########################################################################
-    pass
+    mu, sigma, eta, gamma, eps, x_mu, x_new = cache
+    N, D = x_mu.shape
+    dgamma = np.sum(x_new * dout, axis=0)
+    dbeta = np.sum(dout, axis=0)
+    dx = gamma * eta * (dout * N - x_mu * eta**2 * np.sum(dout * x_mu, axis=0) - np.sum(dout, axis=0))/N
+    """ 
+    The following lines are my experiment to find such elegant equaiton. 
+#     tmp =  gamma * eta * (dout - x_mu * eta**2 * np.sum(dout * x_mu, axis=0)/ N)
+#     tmp =  gamma * eta * (dout - x_mu * eta**2 * np.sum(dout * x_mu, axis=0)/ N)
+#     dx = tmp - np.sum(tmp, axis=0)/N
+#     dx = gamma * eta * (dout - x_mu * eta**2 * np.sum(dout * x_mu, axis=0)/ N - np.sum(dout - x_mu * eta**2 * np.sum(dout * x_mu, axis=0)/ N, axis=0)/N)
+#     print(np.sum(x_mu * eta**2, axis=0))
+      # Unbelieveable, since x - mu is zero mean, than np.sum(x_mu * anything , axis=0) is zero!!!
+      # Beauty of math!!!  
+#     print( np.sum((- x_mu * eta**2 * np.sum(dout * x_mu, axis=0)/N), axis=0))
+#     dx = gamma * eta * (dout*N - x_mu * eta**2 * np.sum(dout * x_mu, axis=0) - np.sum(dout, axis=0))/N
+#     dx = gamma * eta * (dout * N - x_mu * eta**2 * np.sum(dout * x_mu, axis=0) - np.sum(dout - dout * eta * np.sum(dout * x_mu, axis=0), axis=0))/N
+#     dx = gamma * eta * (N * dout - x_mu * eta**2 * np.sum(dout * x_mu, axis=0) - np.sum(dout - x_mu * eta**2 * np.sum(dout * x_mu, axis=0)/ N, axis=0))/N
+#     dx = 1/N * gamma * eta *(N * dout - np.sum(dout, axis=0) - x_mu * eta**2 * np.sum(dout * x_mu, axis=0))
+    """
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
