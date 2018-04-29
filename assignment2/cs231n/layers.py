@@ -295,7 +295,7 @@ def batchnorm_backward_alt(dout, cache):
 #     dx = tmp - np.sum(tmp, axis=0)/N
 #     dx = gamma * eta * (dout - x_mu * eta**2 * np.sum(dout * x_mu, axis=0)/ N - np.sum(dout - x_mu * eta**2 * np.sum(dout * x_mu, axis=0)/ N, axis=0)/N)
 #     print(np.sum(x_mu * eta**2, axis=0))
-      # Unbelieveable, since x - mu is zero mean, than np.sum(x_mu * anything , axis=0) is zero!!!
+      # Unbelieveable, since x - mu is zero mean, then np.sum(x_mu * anything , axis=0) is zero!!!
       # Beauty of math!!!  
 #     print( np.sum((- x_mu * eta**2 * np.sum(dout * x_mu, axis=0)/N), axis=0))
 #     dx = gamma * eta * (dout*N - x_mu * eta**2 * np.sum(dout * x_mu, axis=0) - np.sum(dout, axis=0))/N
