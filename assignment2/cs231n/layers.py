@@ -508,7 +508,19 @@ def max_pool_forward_naive(x, pool_param):
     ###########################################################################
     # TODO: Implement the max pooling forward pass                            #
     ###########################################################################
-    pass
+    pool_height = pool_param['pool_height']
+    pool_width = pool_param['pool_width']
+    stride = pool_param['stride']
+    N, C, H, W = x.shape
+    H1 = 1 + (H - pool_height) // stride
+    W1 = 1 + (W - pool_width) // stride
+    out = np.zeros((N, C, H1, W1))
+    for n in range(N):
+        for c in range(C):
+            for i in range(H1):
+                for j in range(W1):
+                    out[n, c, i, j] = np.max(x[n, c, i * stride:i * stride + pool_height, j * stride:j * stride +  pool_width])
+                    
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -531,7 +543,22 @@ def max_pool_backward_naive(dout, cache):
     ###########################################################################
     # TODO: Implement the max pooling backward pass                           #
     ###########################################################################
-    pass
+    x, pool_param = cache
+    pool_height = pool_param['pool_height']
+    pool_width = pool_param['pool_width']
+    stride = pool_param['stride']
+    N, C, H, W = x.shape
+    H1 = 1 + (H - pool_height) // stride
+    W1 = 1 + (W - pool_width) // stride
+    dx = np.zeros_like(x)
+    for n in range(N):
+        for c in range(C):
+            for i in range(H1):
+                for j in range(W1):
+#                     print(np.argmax(dx[n, c, i * stride:i * stride + pool_height, j * stride:j * stride +  pool_width]))
+                    idx = np.argmax(x[n, c, i * stride:i * stride + pool_height, j * stride:j * stride +  pool_width])
+                    dx_i, dx_j = divmod(idx, pool_width) # A little tricky here since argmax return a single value instead of coordinate
+                    dx[n, c, i * stride + dx_i, j * stride + dx_j] += dout[n, c, i, j]
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -569,7 +596,9 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
     # version of batch normalization defined above. Your implementation should#
     # be very short; ours is less than five lines.                            #
     ###########################################################################
-    pass
+    N, C, H, W = x.shape
+    out, cache = batchnorm_forward(x.transpose(0, 2, 3, 1).reshape(N * H * W, C), gamma, beta, bn_param)
+    out = out.reshape(N, H, W, C).transpose(0, 2, 3, 1)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -599,7 +628,9 @@ def spatial_batchnorm_backward(dout, cache):
     # version of batch normalization defined above. Your implementation should#
     # be very short; ours is less than five lines.                            #
     ###########################################################################
-    pass
+    N, C, H, W = dout.shape
+    dx, dgamma, dbeta = batchnorm_backward_alt(dout.transpose(0, 2, 3, 1).reshape(N * H * W, C), cache)
+    dx = dx.reshape(N, H, W, C).transpose(0, 2, 3, 1)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
