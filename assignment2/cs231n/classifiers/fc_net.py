@@ -282,6 +282,9 @@ class FullyConnectedNet(object):
                 tmp_input, tmp_cache[i] = affine_bn_relu_forward(tmp_input, self.params['W' + str(i + 1)], self.params['b' + str(i + 1)], self.params['gamma' + str(i + 1)], self.params['beta' + str(i + 1)], self.bn_params[i])
             else:
                 tmp_input, tmp_cache[i] = affine_relu_forward(tmp_input, self.params['W' + str(i + 1)], self.params['b' + str(i + 1)])
+            if self.use_dropout:
+                tmp_input, dropout_cache = dropout_forward(tmp_input, self.dropout_param)
+                tmp_cache[i] += dropout_cache
 #         print('self.num_layers', self.num_layers)
         i = self.num_layers - 1
         scores, tmp_cache[i] = affine_forward(tmp_input, self.params['W' + str(i + 1)], self.params['b' + str(i + 1)])
@@ -317,6 +320,10 @@ class FullyConnectedNet(object):
         for j in range(self.num_layers - 1):
             i = self.num_layers - 1 - j - 1 # To keep consitency with forward process
             loss += self.reg * 0.5 * np.sum(self.params['W' + str(i + 1)] ** 2)
+            if self.use_dropout:
+                dropout_cache = tmp_cache[i][-2:]
+                dout = dropout_backward(dout, dropout_cache)
+                tmp_cache[i] = tmp_cache[i][:-2]
             if self.use_batchnorm:
                 dout, dw, db, dgamma, dbeta = affine_bn_relu_backward(dout, tmp_cache[i])
                 grads['gamma' + str(i + 1)] = dgamma
