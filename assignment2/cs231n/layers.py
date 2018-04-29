@@ -414,7 +414,24 @@ def conv_forward_naive(x, w, b, conv_param):
     # TODO: Implement the convolutional forward pass.                         #
     # Hint: you can use the function np.pad for padding.                      #
     ###########################################################################
-    pass
+    N, C, H, W = x.shape
+    F, C, HH, WW = w.shape
+    stride = conv_param['stride']
+    pad = conv_param['pad']
+    H1 = 1 + (H + 2 * pad - HH) // stride
+    W1 = 1 + (W + 2 * pad - WW) // stride
+#     x_pad = np.zeros((N, C, H + 2 * pad, W + 2 * pad))
+#     x_pad[:, :, pad:-pad, pad:-pad] = x
+    x_pad = np.pad(x, ((0, 0), (0, 0), (pad, pad), (pad, pad)), 'constant') # By document, default set zero.
+    out = np.zeros((N, F, H1, W1)) # N, F, H', W'
+    # I must admit that 4 nested for loop is some kinds of stupid
+    for n in range(N):
+        for i in range(H1):
+            for j in range(W1):
+                for f in range(F):
+#                     print(x_pad[n, :, i * stride:i * stride + HH, j * stride:j * stride +  WW].shape)
+#                     print(w[f].shape)
+                    out[n, f, i, j] = np.sum(x_pad[n, :, i * stride:i * stride + HH, j * stride:j * stride +  WW] * w[f]) + b[f]
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -439,7 +456,33 @@ def conv_backward_naive(dout, cache):
     ###########################################################################
     # TODO: Implement the convolutional backward pass.                        #
     ###########################################################################
-    pass
+    x, w, b, conv_param = cache
+    db = np.sum(dout, axis = (0, 2, 3)) # Count per f
+    stride = conv_param['stride']
+    pad = conv_param['pad']
+    x_pad = np.pad(x, ((0, 0), (0, 0), (pad, pad), (pad, pad)), 'constant')
+    N, C, H, W = x.shape
+    F, C, HH, WW = w.shape
+    H1 = 1 + (H + 2 * pad - HH) // stride
+    W1 = 1 + (W + 2 * pad - WW) // stride
+    dx_pad = np.zeros((N, C, H + 2 * pad, W + 2 * pad))
+    dw = np.zeros_like(w)
+    for n in range(N):
+        for f in range(F):
+            for i in range(H1):
+                for j in range(W1):
+#                     print('i, j', i, j)
+#                     print(dx_pad[n, :, i * stride:i * stride + HH, j * stride:j * stride +  WW].shape)
+#                     print(dout[n, f, i * stride:i * stride + HH, j * stride:j * stride +  WW].shape)
+#                     print(w[f].shape)
+#                     out[n, f, i, j] = np.sum(x_pad[n, :, i * stride:i * stride + HH, j * stride:j * stride +  WW] * w[f]) + b[f] 
+#                     dx_pad[n, :, i, j] += np.sum(dout[n, f, i * stride:i * stride + HH, j * stride:j * stride +  WW] * w[f])
+                    dx_pad[n, :, i * stride:i * stride + HH, j * stride:j * stride +  WW] += dout[n, f, i, j] * w[f]
+#                     print(dout[n, f, i * stride:i * stride + HH, j * stride:j * stride +  WW].shape)
+#                     print(x_pad[n, :, i * stride:i * stride + HH, j * stride:j * stride +  WW].shape)
+#                     print(np.array(dout[n, f, i, j] * x_pad[n, :, i * stride:i * stride + HH, j * stride:j * stride +  WW]).shape)
+                    dw[f] += dout[n, f, i, j] * x_pad[n, :, i * stride:i * stride + HH, j * stride:j * stride +  WW]
+    dx = dx_pad[:, :, pad:-pad, pad:-pad]
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
