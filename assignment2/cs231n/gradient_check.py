@@ -52,7 +52,6 @@ def eval_numerical_gradient_array(f, x, df, h=1e-5):
         x[ix] = oldval - h
         neg = f(x).copy()
         x[ix] = oldval
-
         grad[ix] = np.sum((pos - neg) * df) / (2 * h)
         it.iternext()
     return grad

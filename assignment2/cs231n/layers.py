@@ -598,7 +598,7 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
     ###########################################################################
     N, C, H, W = x.shape
     out, cache = batchnorm_forward(x.transpose(0, 2, 3, 1).reshape(N * H * W, C), gamma, beta, bn_param)
-    out = out.reshape(N, H, W, C).transpose(0, 2, 3, 1)
+    out = out.reshape(N, H, W, C).transpose(0, 3, 1, 2)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -630,7 +630,7 @@ def spatial_batchnorm_backward(dout, cache):
     ###########################################################################
     N, C, H, W = dout.shape
     dx, dgamma, dbeta = batchnorm_backward_alt(dout.transpose(0, 2, 3, 1).reshape(N * H * W, C), cache)
-    dx = dx.reshape(N, H, W, C).transpose(0, 2, 3, 1)
+    dx = dx.reshape(N, H, W, C).transpose(0, 3, 1, 2)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
