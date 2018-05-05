@@ -1,4 +1,8 @@
 # Byte-compiled / optimized / DLL files
+#datasets
+assignment3/cs231n/datasets/
+#nohup
+nohup.out
 __pycache__/
 *.py[cod]
 *$py.class
