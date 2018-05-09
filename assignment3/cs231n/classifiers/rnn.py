@@ -210,7 +210,16 @@ class CaptioningRNN(object):
         # functions; you'll need to call rnn_step_forward or lstm_step_forward in #
         # a loop.                                                                 #
         ###########################################################################
-        pass
+        prev_word = [self._start] * N
+        h_t, affine_cache = affine_forward(features, W_proj, b_proj)
+        captions[:, 0] = [self._start] * N
+        for i in range(max_length):
+            embeded_word = W_embed[prev_word]
+            h_t, rnn_cache = rnn_step_forward(embeded_word, h_t, Wx, Wh, b)
+            score, vacab_cache = affine_forward(h_t, W_vocab, b_vocab)
+            captions[:, i] = score.argmax(axis=1)
+            prev_word = captions[:, i]
+            
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
